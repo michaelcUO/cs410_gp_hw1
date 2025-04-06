@@ -27,6 +27,7 @@ public class PlayerController : MonoBehaviour {
     public int maxJumps = 2; // Maximum number of jumps allowed.
     private int jumpCount; // Current number of jumps performed.
     private bool isGrounded; // Flag to check if the player is on the ground.
+    private bool jumpPressed = false; // Flag to check if jump is pressed.
 
     // Start is called before the first frame update.
     void Start() {
@@ -55,6 +56,14 @@ public class PlayerController : MonoBehaviour {
         movementY = movementVector.y;
     }
 
+    // Jump uses 'Update' to reliably check for jump input since it is called every frame
+    void Update() {
+        // Check if the space key is pressed.
+        if (Input.GetKeyDown(KeyCode.Space)) {
+            jumpPressed = true; // Set jumpPressed to true when space is pressed.
+        }
+    }
+
     // FixedUpdate is called once per fixed frame-rate frame.
     private void FixedUpdate() {
         // Create a 3D movement vector using the X and Y inputs.
@@ -62,6 +71,14 @@ public class PlayerController : MonoBehaviour {
 
         // Apply force to the Rigidbody to move the player.
         rb.AddForce(movement * speed);
+
+        // If a jump is pressed and the player hasn't exceeded the max jumps:
+        if (jumpPressed && jumpCount < maxJumps) {
+        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z); // Reset vertical velocity to ensure consistent jump height.
+        rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse); // Apply upward force for jumping.
+        jumpCount++; // Increment the jump count.
+        }
+        jumpPressed = false; // Reset the flag
     }
 
     // Trigger event handler for when the player enters a trigger collider.
@@ -98,6 +115,16 @@ public class PlayerController : MonoBehaviour {
 
     // Collision event handler for when the player collides with another object.
     private void OnCollisionEnter(Collision collision) {
+
+        // Check if the player touches the ground.
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = true; // Set the grounded flag to true.
+            // Reset jump count when the player is on the ground.
+            jumpCount = 0;
+        }
+
+
         if (collision.gameObject.CompareTag("Enemy"))
         {
             // Destroy the current object.
